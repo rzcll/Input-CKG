@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>INPUT CKG</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+    
+    body { background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); min-height: 100vh; color: #334155; display: flex; flex-direction: column; position: relative; overflow-x: hidden; }
+    .bg-glow-1 { position: fixed; top: -10%; left: -10%; width: 400px; height: 400px; background: #bfdbfe; border-radius: 50%; filter: blur(100px); opacity: 0.6; z-index: -1; }
+    .bg-glow-2 { position: fixed; bottom: -10%; right: -10%; width: 400px; height: 400px; background: #cbd5e1; border-radius: 50%; filter: blur(100px); opacity: 0.8; z-index: -1; }
+
+    .glass-panel { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 20px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15); padding: 2.5rem; margin: 2rem auto; width: 90%; max-width: 600px; }
+    .glass-panel.dashboard-panel { max-width: 850px; max-height: 75vh; overflow-y: auto; }
+    .dashboard-panel::-webkit-scrollbar { width: 6px; } .dashboard-panel::-webkit-scrollbar-track { background: transparent; } .dashboard-panel::-webkit-scrollbar-thumb { background: rgba(14, 165, 233, 0.3); border-radius: 10px; }
+
+    .nav-menu { display: flex; justify-content: center; gap: 15px; padding: 20px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12); position: sticky; top: 0; z-index: 10; flex-wrap: wrap; }
+    .nav-menu button { background: #ffffff; border: 1px solid rgba(0, 0, 0, 0.05); color: #475569; padding: 10px 24px; border-radius: 30px; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.3s ease; display: flex; align-items: center; gap: 8px; justify-content: center; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08); }
+    .nav-menu button:hover { background: #f8fafc; color: #3b82f6; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15); }
+    .nav-menu button.active { background: linear-gradient(135deg, #3b82f6 0%, #0ea5e9 100%); color: white; border: none; box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4), 0 4px 10px rgba(0,0,0,0.15); transform: translateY(-2px); }
+
+    .form-group { margin-bottom: 20px; position: relative; width: 100%; } .form-group label { display: block; margin-bottom: 8px; font-size: 0.9rem; font-weight: 600; color: #334155; }
+    .input-wrapper { position: relative; display: flex; align-items: center; width: 100%; } .input-wrapper i { position: absolute; left: 15px; color: #0ea5e9; font-size: 1.1rem; pointer-events: none; }
+    .input-field { width: 100%; padding: 14px 14px 14px 45px; border-radius: 12px; border: 1px solid #cbd5e1; background: rgba(255, 255, 255, 0.9); color: #1e293b; font-size: 1rem; outline: none; transition: all 0.3s ease; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
+    .input-field:focus { border-color: #3b82f6; background: #ffffff; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15); } .input-field option { background: #ffffff; color: #334155; }
+    .input-wrapper .calendar-icon { left: auto; right: 15px; } .input-field.cal-input { padding-left: 14px; padding-right: 45px; }
+
+    .btn-submit { width: 100%; padding: 14px; background: linear-gradient(135deg, #3b82f6 0%, #0ea5e9 100%); border: none; border-radius: 12px; color: white; font-weight: 600; font-size: 1.05rem; cursor: pointer; transition: all 0.3s ease; margin-top: 15px; box-shadow: 0 6px 15px rgba(14, 165, 233, 0.3), 0 4px 10px rgba(0,0,0,0.1); }
+    .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(14, 165, 233, 0.4), 0 6px 12px rgba(0,0,0,0.15); }
+    .btn-excel { background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 6px 15px rgba(16, 185, 129, 0.3), 0 4px 10px rgba(0,0,0,0.1); }
+    .btn-excel:hover { box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4), 0 6px 12px rgba(0,0,0,0.15); }
+    .btn-excel:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    h2 { text-align: center; margin-bottom: 25px; font-weight: 600; font-size: 1.5rem; color: #1e293b; text-shadow: 0 1px 2px rgba(0,0,0,0.05); } .hidden { display: none !important; }
+    .user-list-container { margin-top: 15px; max-height: 200px; overflow-y: auto; padding-right: 5px; } .user-list-container::-webkit-scrollbar { width: 4px; } .user-list-container::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
+    .user-item { background: #ffffff; border: 1px solid rgba(0, 0, 0, 0.05); border-radius: 10px; padding: 12px 15px; margin-bottom: 10px; font-size: 0.95rem; font-weight: 500; display: flex; align-items: center; gap: 12px; color: #334155; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    .user-item .avatar { background: rgba(14, 165, 233, 0.1); color: #0ea5e9; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; }
+    .chart-card { background: #ffffff; border: 1px solid rgba(0, 0, 0, 0.05); border-radius: 16px; padding: 20px; margin-bottom: 25px; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08); }
+    footer { text-align: center; padding: 20px; margin-top: auto; font-size: 0.85rem; color: #64748b; font-weight: 500; }
+
+    .flex-container { display: flex; gap: 15px; margin-bottom: 20px; width: 100%; } .flex-2 { flex: 2; } .flex-1 { flex: 1; }
+
+    @media screen and (max-width: 600px) {
+      .glass-panel { padding: 1.5rem; margin: 1rem auto; width: 95%; border-radius: 16px; }
+      .nav-menu { padding: 15px 10px; gap: 10px; } .nav-menu button { flex: 1 1 calc(50% - 10px); padding: 12px 10px; font-size: 0.85rem; }
+      h2 { font-size: 1.25rem; margin-bottom: 20px; } .input-field { padding: 12px 12px 12px 40px; font-size: 0.95rem; } .btn-submit { padding: 12px; font-size: 1rem; }
+      .flex-container { flex-direction: column; gap: 0px; margin-bottom: 0; } .flex-2, .flex-1 { flex: 1; width: 100%; } .chart-card { padding: 15px; }
+    }
+  </style>
+</head>
+<body onload="initApp()"> 
+  <div class="bg-glow-1"></div><div class="bg-glow-2"></div>
+
+  <!-- Menu Navigasi -->
+  <div class="nav-menu">
+    <button id="btnMenuDash" class="active" onclick="switchMenu('menuDash')"><i class="fas fa-chart-line"></i> Dashboard</button>
+    <button id="btnMenuInput" onclick="switchMenu('menuInput')"><i class="fas fa-file-medical"></i> Entri Data</button>
+    <button id="btnMenuUser" onclick="switchMenu('menuUser')"><i class="fas fa-user-plus"></i> Petugas</button>
+    <button id="btnMenuDownload" onclick="switchMenu('menuDownload')"><i class="fas fa-download"></i> Unduh</button>
+  </div>
+
+  <div id="menuDash" class="glass-panel dashboard-panel">
+    <h2>Rekapitulasi Capaian CKG</h2>
+    <div style="text-align: center; margin-bottom: 30px;">
+      <button class="btn-submit" style="width: auto; padding: 10px 24px; border-radius: 30px;" onclick="loadDashboard()"><i class="fas fa-sync-alt"></i> Segarkan Data</button>
+    </div>
+    <div id="chartsContainer"><div style="text-align:center; color:#64748b; padding: 20px;">Memuat data grafik...</div></div>
+  </div>
+
+  <div id="menuInput" class="glass-panel hidden">
+    <h2>Entri Data CKG</h2>
+    <form id="formData" onsubmit="handleDataSubmit(event)">
+      <div class="form-group">
+        <label>Pilih Petugas</label>
+        <div class="input-wrapper"><i class="fas fa-user-nurse"></i><select id="selectPetugas" class="input-field" required><option value="">-- Memuat Data --</option></select></div>
+      </div>
+      <div class="form-group"><label>Nama Pasien</label><div class="input-wrapper"><i class="fas fa-bed"></i><input type="text" id="namaPasien" class="input-field" placeholder="Nama Lengkap Pasien" required></div></div>
+      <div class="form-group"><label>No. Etiket</label><div class="input-wrapper"><i class="fas fa-ticket-alt"></i><input type="text" id="noEtiket" class="input-field" placeholder="Nomor Etiket Pasien" required></div></div>
+      <div class="form-group"><label>Waktu Entry</label><div class="input-wrapper"><input type="text" id="waktuEntry" class="input-field cal-input" placeholder="Pilih Tanggal Entry..." required><i class="fas fa-calendar-alt calendar-icon"></i></div></div>
+      <button type="submit" class="btn-submit"><i class="fas fa-paper-plane"></i> Simpan Data CKG</button>
+    </form>
+    <div id="msgData" style="display:none; text-align:center; margin-top:15px; color:#0ea5e9; font-weight:bold;">Memproses...</div>
+  </div>
+
+  <div id="menuUser" class="glass-panel hidden">
+    <h2>Tambah Petugas Baru</h2>
+    <form id="formUser" onsubmit="handleUserSubmit(event)">
+      <div class="form-group"><label>Nama Lengkap Petugas</label><div class="input-wrapper"><i class="fas fa-user"></i><input type="text" id="namaPetugas" class="input-field" placeholder="Ketik nama petugas..." required></div></div>
+      <button type="submit" class="btn-submit"><i class="fas fa-save"></i> Simpan Petugas</button>
+    </form>
+    <div id="msgUser" style="display:none; text-align:center; margin-top:15px; color:#0ea5e9; font-weight:bold;">Menyimpan...</div>
+    <div style="margin-top: 40px;">
+      <h3 style="font-size: 1rem; color: #475569; margin-bottom: 10px; font-weight:600;">Daftar Petugas Terdaftar</h3>
+      <div id="listPetugas" class="user-list-container"><div style="text-align:center; color:#9ca3af; padding: 10px;">Memuat data...</div></div>
+    </div>
+  </div>
+
+  <div id="menuDownload" class="glass-panel hidden">
+    <h2><i class="fas fa-file-excel" style="color: #10b981;"></i> Ekspor Data CKG</h2>
+    <p style="text-align: center; color: #475569; margin-bottom: 25px; font-size: 0.95rem;">Pilih <b>Bulan Laporan</b> yang akan diunduh. File Excel akan dipisahkan otomatis per Nama Petugas.</p>
+    
+    <div class="flex-container">
+      <div class="form-group flex-2">
+        <label>Pilih Bulan</label>
+        <div class="input-wrapper"><i class="fas fa-calendar-alt"></i>
+          <select id="filterBulan" class="input-field">
+            <option value="Januari">Januari</option> <option value="Februari">Februari</option> <option value="Maret">Maret</option>
+            <option value="April">April</option> <option value="Mei">Mei</option> <option value="Juni">Juni</option>
+            <option value="Juli">Juli</option> <option value="Agustus">Agustus</option> <option value="September">September</option>
+            <option value="Oktober">Oktober</option> <option value="November">November</option> <option value="Desember">Desember</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group flex-1">
+        <label>Tahun</label>
+        <div class="input-wrapper"><i class="fas fa-calendar-check"></i><input type="number" id="filterTahun" class="input-field" placeholder="YYYY" required></div>
+      </div>
+    </div>
+    <button id="btnUnduh" class="btn-submit btn-excel" onclick="downloadExcel()"><i class="fas fa-download"></i> Unduh Data Excel</button>
+  </div>
+
+  <footer><p>Aplikasi INPUT CKG &copy; 2026</p></footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://npmcdn.com/flatpickr/dist/l10n/id.js"></script>
+
+  <script>
+    // ==========================================
+    // ⚠️ GANTI LINK DI BAWAH INI DENGAN URL API WEB GOOGLE SCRIPT ANDA
+    // ==========================================
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzrjl9sr0twuLqjZ4gb6cvjF4iVo4GIXbSzwWKcWLdfz44LQ0qqCD_qeuAYYO9SSOyLfA/exec"; 
+
+    let chartInstances = []; 
+    const liburNasional = ["2026-01-01", "2026-02-18", "2026-03-19", "2026-03-20", "2026-03-21", "2026-04-03", "2026-05-01", "2026-05-14", "2026-05-27", "2026-06-01", "2026-06-16", "2026-08-17", "2026-08-26", "2026-12-25"];
+
+    // FUNGSI KOMUNIKASI API (Pengganti google.script.run)
+    function callAPI(action, params = {}, onSuccess, onFailure) {
+      let formData = new URLSearchParams();
+      formData.append('action', action);
+      for (let key in params) { formData.append(key, params[key]); }
+
+      fetch(GAS_URL, { method: 'POST', body: formData })
+        .then(res => res.json())
+        .then(result => {
+          if (result.status === 'success') { if (onSuccess) onSuccess(result.data); } 
+          else { if (onFailure) onFailure(new Error(result.message)); }
+        })
+        .catch(err => { if (onFailure) onFailure(err); });
+    }
+
+    function initApp() {
+      if(GAS_URL === "URL_WEB_APP_ANDA_DISINI") {
+        alert("PERHATIAN: Anda belum memasukkan URL Google Apps Script pada file HTML baris ke-162!"); return;
+      }
+      callAPI('checkConnection', {}, 
+        function() {
+           try { loadDashboard(); } catch(e) {}
+           try { initCalendar(); } catch(e) {}
+           try { initFilterLaporan(); } catch(e) {}
+        },
+        function(err) { alert("MASALAH TERDETEKSI: Gagal terhubung ke Database. Pastikan Link Web App sudah benar dan diset ke 'Anyone/Siapa saja'."); }
+      );
+    }
+
+    function initCalendar() {
+      if (typeof flatpickr !== 'undefined') {
+        flatpickr("#waktuEntry", { locale: "id", dateFormat: "Y-m-d", altInput: true, altFormat: "j F Y", disableMobile: true,
+          onDayCreate: function(dObj, dStr, fp, dayElem) {
+            let dateString = `${dayElem.dateObj.getFullYear()}-${('0' + (dayElem.dateObj.getMonth() + 1)).slice(-2)}-${('0' + dayElem.dateObj.getDate()).slice(-2)}`;
+            if (dayElem.dateObj.getDay() === 0 || liburNasional.includes(dateString)) {
+              dayElem.style.color = "#ef4444"; dayElem.style.fontWeight = "bold"; dayElem.style.backgroundColor = "rgba(239, 68, 68, 0.1)"; dayElem.style.borderRadius = "50%";
+            }
+          }
+        });
+      }
+    }
+
+    function initFilterLaporan() {
+      const d = new Date(); const bln = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+      document.getElementById('filterBulan').value = bln[d.getMonth()]; document.getElementById('filterTahun').value = d.getFullYear();
+    }
+
+    function switchMenu(menuId) {
+      ['menuDash', 'menuUser', 'menuInput', 'menuDownload'].forEach(m => document.getElementById(m).classList.add('hidden'));
+      ['btnMenuDash', 'btnMenuUser', 'btnMenuInput', 'btnMenuDownload'].forEach(b => document.getElementById(b).classList.remove('active'));
+      document.getElementById(menuId).classList.remove('hidden'); document.getElementById('btn' + menuId.charAt(0).toUpperCase() + menuId.slice(1)).classList.add('active');
+      if(menuId === 'menuDash') loadDashboard(); if(menuId === 'menuInput') loadPetugas(); if(menuId === 'menuUser') loadRegisteredUsers();
+    }
+
+    function loadRegisteredUsers() {
+      const container = document.getElementById('listPetugas'); container.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:10px;"><i class="fas fa-spinner fa-spin"></i> Memuat data...</div>';
+      callAPI('getUsers', {}, 
+        users => {
+          if(users.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:10px;">Belum ada petugas.</div>'; return; }
+          container.innerHTML = users.map((u, i) => `<div class="user-item"><div class="avatar"><i class="fas fa-user"></i></div><div style="flex:1;">${u}</div><div style="color:#64748b; font-size:0.8rem;">#${i+1}</div></div>`).join('');
+        },
+        err => alert("Gagal mengambil data user: " + err.message)
+      );
+    }
+
+    function loadPetugas() {
+      const select = document.getElementById('selectPetugas'); select.innerHTML = '<option value="">-- Memuat Data --</option>';
+      callAPI('getUsers', {}, 
+        users => { select.innerHTML = '<option value="">-- Pilih Petugas --</option>'; users.forEach(u => select.appendChild(new Option(u, u))); },
+        err => alert("Gagal load dropdown: " + err.message)
+      );
+    }
+
+    function handleUserSubmit(e) {
+      e.preventDefault();
+      const msg = document.getElementById('msgUser'); msg.style.display = 'block'; msg.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+      callAPI('saveUser', { nama: document.getElementById('namaPetugas').value },
+        r => { msg.innerHTML = `<i class="fas fa-check"></i> ${r}`; document.getElementById('namaPetugas').value = ''; loadRegisteredUsers(); setTimeout(() => msg.style.display = 'none', 3000); },
+        err => { msg.innerText = "Error: " + err.message; }
+      );
+    }
+
+    function handleDataSubmit(e) {
+      e.preventDefault();
+      const wVal = document.getElementById('waktuEntry').value;
+      if(!wVal) return alert("Harap isi Tanggal!");
+      
+      const msg = document.getElementById('msgData'); msg.style.display = 'block'; msg.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+      const w = new Date(wVal); const bln = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+      
+      callAPI('saveDataInput', {
+          petugas: document.getElementById('selectPetugas').value, pasien: document.getElementById('namaPasien').value,
+          etiket: document.getElementById('noEtiket').value, tanggal: w.getDate(), bulan: bln[w.getMonth()], tahun: w.getFullYear()
+        },
+        r => {
+          msg.innerHTML = `<i class="fas fa-check"></i> ${r}`; document.getElementById('namaPasien').value = ''; document.getElementById('noEtiket').value = '';
+          try { document.getElementById('waktuEntry')._flatpickr.clear(); } catch(err){} setTimeout(() => msg.style.display = 'none', 3000);
+        },
+        err => { msg.innerText = "Error: " + err.message; }
+      );
+    }
+
+    function loadDashboard() {
+      const container = document.getElementById('chartsContainer'); container.innerHTML = '<div style="text-align:center; color:#0ea5e9; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Memuat data grafik...</div>';
+      if (typeof Chart === 'undefined') { container.innerHTML = '<div style="color:#ef4444; padding:20px;">Grafik gagal dimuat karena diblokir oleh internet.</div>'; return; }
+
+      callAPI('getChartData', {}, 
+        dataArray => {
+          chartInstances.forEach(c => c.destroy()); chartInstances = []; container.innerHTML = '';
+          if(dataArray.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9ca3af; padding: 20px;">Belum ada entri CKG.</div>'; return; }
+
+          dataArray.forEach((item, i) => {
+            let wrapper = document.createElement('div'); wrapper.className = 'chart-card';
+            let badge = i === 0 ? `<span style="font-size:0.8rem; background: rgba(14,165,233,0.1); padding:2px 8px; border-radius:10px; margin-left:10px; color:#0284c7;">Terbaru</span>` : '';
+            wrapper.innerHTML = `<h3 style="margin-bottom:20px; font-size:1.1rem; font-weight:600; color:#1e293b;"><i class="fas fa-calendar-alt" style="color:#0284c7; margin-right:8px;"></i> Bulan ${item.labelBulan} ${badge}</h3>`;
+            let canvasContainer = document.createElement('div'); canvasContainer.style.cssText = 'position:relative; height:30vh; width:100%;';
+            let canvas = document.createElement('canvas'); canvasContainer.appendChild(canvas); wrapper.appendChild(canvasContainer); container.appendChild(wrapper);
+
+            let ctx = canvas.getContext('2d'); let gradient = ctx.createLinearGradient(0, 0, 0, 400); gradient.addColorStop(0, 'rgba(14, 165, 233, 0.7)'); gradient.addColorStop(1, 'rgba(59, 130, 246, 0.1)');
+            chartInstances.push(new Chart(ctx, { type: 'bar', data: { labels: Object.keys(item.petugasData), datasets: [{ data: Object.values(item.petugasData), backgroundColor: gradient, borderColor: '#0ea5e9', borderWidth: 1, borderRadius: 8, maxBarThickness: 40 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { color: '#64748b', stepSize: 1 } }, x: { ticks: { color: '#475569' }, grid: { display: false } } }, plugins: { legend: { display: false } } } }));
+          });
+        },
+        err => { container.innerHTML = `<div style="color:red; text-align:center;">Gagal menghubungi server API.</div>`; }
+      );
+    }
+
+    function downloadExcel() {
+      const btn = document.getElementById('btnUnduh'); const bln = document.getElementById('filterBulan').value, thn = document.getElementById('filterTahun').value;
+      if(!thn) return alert("Masukkan Tahun!"); if (typeof XLSX === 'undefined') return alert("Sistem Pembuat Excel diblokir oleh jaringan internet Anda.");
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyiapkan Data...'; btn.disabled = true;
+
+      callAPI('getAllDataForExport', {}, 
+        data => {
+          try {
+            if(!data || data.length <= 1) { alert('Database kosong.'); btn.innerHTML = '<i class="fas fa-download"></i> Unduh Data Excel'; btn.disabled = false; return; }
+            const filtered = data.slice(1).filter(r => (r[5]?r[5].toString().trim():"") === bln && (r[6]?r[6].toString().trim():"") === thn);
+            if(filtered.length === 0) { alert(`Tidak ada laporan bulan ${bln} tahun ${thn}.`); btn.innerHTML = '<i class="fas fa-download"></i> Unduh Data Excel'; btn.disabled = false; return; }
+
+            let grouped = {}; filtered.forEach(r => { let p = (r[1]?r[1].toString().trim():'Tanpa Nama') || 'Tanpa Nama'; if(!grouped[p]) grouped[p] = [data[0]]; grouped[p].push(r); });
+            let wb = XLSX.utils.book_new(); for (let p in grouped) { XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(grouped[p]), p.substring(0, 31).replace(/[\\/*?:\[\]]/g, '')); }
+            XLSX.writeFile(wb, `Data_CKG_${bln}_${thn}.xlsx`); btn.innerHTML = '<i class="fas fa-download"></i> Unduh Data Excel'; btn.disabled = false;
+          } catch (e) { alert("Error Excel: " + e.message); btn.innerHTML = '<i class="fas fa-download"></i> Unduh Data Excel'; btn.disabled = false; }
+        },
+        err => { alert("Koneksi gagal."); btn.innerHTML = '<i class="fas fa-download"></i> Unduh Data Excel'; btn.disabled = false; }
+      );
+    }
+  </script>
+</body>
+</html>
